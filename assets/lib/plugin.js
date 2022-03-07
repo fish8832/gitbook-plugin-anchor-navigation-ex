@@ -17,10 +17,11 @@ function handlerTocs($, page, modifyHeader) {
     var count = {
         h1: 0,
         h2: 0,
-        h3: 0
+        h3: 0,
+        h4: 0
     };
     var titleCountMap = {}; // 用来记录标题出现的次数
-    var h1 = 0, h2 = 0, h3 = 0;
+    var h1 = 0, h2 = 0, h3 = 0, h4 = 0;
     $(':header').each(function (i, elem) {
         var header = $(elem);
         var id = addId(header, titleCountMap);
@@ -35,6 +36,11 @@ function handlerTocs($, page, modifyHeader) {
                     break;
                 case "h3":
                     handlerH3Toc(config, count, header, tocs, page.level, modifyHeader);
+                    break;
+                case "h4":
+                    if (config.headerDepth >= 4) {
+                        handlerH4Toc(config, count, header, tocs, page.level, modifyHeader);
+                    }
                     break;
                 default:
                     titleAddAnchor(header, id);
@@ -231,6 +237,84 @@ function handlerH3Toc(config, count, header, tocs, pageLevel, modifyHeader) {
 }
 
 /**
+ * 处理h4
+ * @param count 计数器
+ * @param header
+ */
+function handlerH4Toc(config, count, header, tocs, pageLevel, modifyHeader) {
+    var title = header.text();
+    var id = header.attr('id');
+    var level = ''; //层级
+
+    if (tocs.length <= 0) {
+        //一级节点为空时，生成一个空的一级节点，让二级节点附带在这个上面
+        if (config.showLevel) {
+            count.h1 += 1;
+        }
+        tocs.push({
+            name: "",
+            level: "",
+            url: "",
+            children: []
+        });
+    }
+    var h1Index = tocs.length - 1;
+    var h1Toc = tocs[h1Index];
+    var h2Tocs = h1Toc.children;
+    if (h2Tocs.length <= 0) {
+        //二级节点为空时，生成一个空的二级节点，让三级节点附带在这个上面
+        if (config.showLevel) {
+            count.h2 += 1;
+        }
+        h2Tocs.push({
+            name: "",
+            level: "",
+            url: "",
+            children: []
+        });
+    }
+    var h2Toc = h1Toc.children[h2Tocs.length - 1];
+
+    var h3Tocs = h2Toc.children;
+    if (h3Tocs.length <= 0) {
+        //二级节点为空时，生成一个空的二级节点，让三级节点附带在这个上面
+        if (config.showLevel) {
+            count.h3 += 1;
+        }
+        h3Tocs.push({
+            name: "",
+            level: "",
+            url: "",
+            children: []
+        });
+    }
+    var h3Toc = h2Toc.children[h3Tocs.length - 1];
+
+    if (config.showLevel) {
+        count.h3 += 1;
+        if (config.multipleH1) {
+            level = (count.h1 + '.' + count.h2 + '.' + count.h3 + '. ' + count.h4 + '. ');
+        } else {
+            level = (count.h2 + '.' + count.h3 + '. ' + count.h4 + '. ');
+        }
+        if (config.associatedWithSummary && config.themeDefault.showLevel) {
+            level = pageLevel + "." + level;
+        }
+        if (!modifyHeader) {
+            level  = '';
+        }
+        header.text(level + title); //重写标题
+    }
+    titleAddAnchor(header, id);
+    h3Toc.children.push({
+        name: title,
+        level: level,
+        url: id,
+        children: []
+    });
+}
+
+/**
  * 处理浮动导航：拼接锚点导航html，并添加到html末尾，利用css 悬浮
  * @param tocs
  * @returns {string}
@@ -242,12 +326,16 @@ function handlerFloatNavbar($, tocs) {
     var level1Icon = '';
     var level2Icon = '';
     var level3Icon = '';
+    var level4Icon = '';
     if (float.showLevelIcon) {
         level1Icon = float.level1Icon;
         level2Icon = float.level2Icon;
         level3Icon = float.level3Icon;
+        level4Icon = float.level4Icon;
     }
 
+    var name = "";
+    var nameMaxLength = config.headerMaxLength;
     var html = "<div id='anchor-navigation-ex-navbar'><i class='" + floatIcon + "'></i><ul>";
     for (var i = 0; i < tocs.length; i++) {
         var h1Toc = tocs[i];
@@ -266,6 +354,20 @@ function handlerFloatNavbar($, tocs) {
                     for (var k = 0; k < h2Toc.children.length; k++) {
                         var h3Toc = h2Toc.children[k];
                         html += "<li><span class='title-icon " + level3Icon + "'></span><a href='#" + h3Toc.url + "'><b>" + h3Toc.level + "</b>" + h3Toc.name + "</a></li>";
+
+                        if (h3Toc.children.length > 0) {
+                            html += "<ul>";
+                            for (var l = 0; l < h3Toc.children.length; l++) {
+                                var h4Toc = h3Toc.children[l];
+                                name = h4Toc.name;
+                                if (name.length > nameMaxLength) {
+                                    name = name.substring(0, nameMaxLength);
+                                }
+                                html += "<li><span class='title-icon " + level4Icon + "'></span><a href='#" + h4Toc.url + "'><b>" + h4Toc.level + "</b>" + name + "</a></li>";
+                            }
+                            html += "</ul>";
+                        }
+
                     }
                     html += "</ul>";
                 }
@@ -287,12 +389,16 @@ function buildTopNavbar($, tocs) {
     var level1Icon = '';
     var level2Icon = '';
     var level3Icon = '';
+    var level4Icon = '';
     if (pageTop.showLevelIcon) {
         level1Icon = pageTop.level1Icon;
         level2Icon = pageTop.level2Icon;
         level3Icon = pageTop.level3Icon;
+        level4Icon = pageTop.level4Icon;
     }
 
+    var name = "";
+    var nameMaxLength = config.headerMaxLength;
     var html = "<div id='anchor-navigation-ex-pagetop-navbar'><ul>";
     for (var i = 0; i < tocs.length; i++) {
         var h1Toc = tocs[i];
@@ -311,6 +417,20 @@ function buildTopNavbar($, tocs) {
                     for (var k = 0; k < h2Toc.children.length; k++) {
                         var h3Toc = h2Toc.children[k];
                         html += "<li><span class='title-icon " + level3Icon + "'></span><a href='#" + h3Toc.url + "'><b>" + h3Toc.level + "</b>" + h3Toc.name + "</a></li>";
+
+                        if (h3Toc.children.length > 0) {
+                            html += "<ul>";
+                            for (var l = 0; l < h3Toc.children.length; l++) {
+                                var h4Toc = h3Toc.children[l];
+                                name = h4Toc.name;
+                                if (name.length > nameMaxLength) {
+                                    name = name.substring(0, nameMaxLength);
+                                }
+                                html += "<li><span class='title-icon " + level4Icon + "'></span><a href='#" + h4Toc.url + "'><b>" + h4Toc.level + "</b>" + name + "</a></li>";
+                            }
+                            html += "</ul>";
+                        }
+
                     }
                     html += "</ul>";
                 }
@@ -333,7 +453,15 @@ function buildGoTop(tocs) {
     var config = Config.config;
     var html = "";
     if (config.showGoTop && tocs && tocs.length > 0) {
-        html = "<a href='#" + tocs[0].url + "' id='anchorNavigationExGoTop'><i class='fa fa-arrow-up'></i></a>";
+        var url = tocs[0].url;
+        if (url == "" && tocs[0].children.length > 0) {
+            url = tocs[0].children[0].url;
+
+            if (url == "" && tocs[0].children[0].children.length > 0) {
+                url = tocs[0].children[0].children[0].url;
+            }
+        }
+        html = "<a href='#" + url + "' id='anchorNavigationExGoTop'><i class='fa fa-arrow-up'></i></a>";
     }
     return html;
 }

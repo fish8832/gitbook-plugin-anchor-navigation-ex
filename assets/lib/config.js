@@ -10,18 +10,22 @@ const defaultConfig = {
     // 模式：分为三种：float：浮动导航、pageTop：页面内部顶部导航、null:不显示导航
     mode: "float",
     showGoTop: true, //是否显示返回顶部摁扭
+    headerDepth: 4,  // 最多显示标题层级, 3或4
+    headerMaxLength: 20, // 标题最大长度
     float: { //浮动导航设置
         floatIcon: "fa fa-navicon",
         showLevelIcon: false,  //是否显示层级图标
         level1Icon: "fa fa-hand-o-right",
         level2Icon: "fa fa-hand-o-right",
-        level3Icon: "fa fa-hand-o-right"
+        level3Icon: "fa fa-hand-o-right",
+        level4Icon: "fa fa-hand-o-right"
     },
     pageTop: {
         showLevelIcon: false,  //是否显示层级图标
         level1Icon: "fa fa-hand-o-right",
         level2Icon: "fa fa-hand-o-right",
-        level3Icon: "fa fa-hand-o-right"
+        level3Icon: "fa fa-hand-o-right",
+        level4Icon: "fa fa-hand-o-right"
     },
     // 官方默认主题 层级开关
     themeDefault: {
